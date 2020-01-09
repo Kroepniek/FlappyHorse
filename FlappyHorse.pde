@@ -1,4 +1,5 @@
 import processing.sound.*;
+import java.io.*;
 
 BackGround bg;
 Bird bird;
@@ -14,7 +15,7 @@ float scrollSpeed;
 
 int screenShake, shakeAmp;
 
-int lastPipeX, pipeDist, pipesAfter;
+int lastPipeX, pipeDist, pipesAfter, pipesAfterCache;
 int pipeHoleSizeMin, pipeHoleSizeMax;
 
 int startDelay;
@@ -23,22 +24,19 @@ void setup()
 {
   size(800, 500, P2D);
   
+  hint(DISABLE_TEXTURE_MIPMAPS);
+  
   background(0);
   
   frameRate(60);
   
   textAlign(CENTER, CENTER);
-    
+  
   failSounds = new ArrayList<SoundFile>();
-  failSounds.add(new SoundFile(this, "sounds/fail_1.mp3"));
-  failSounds.add(new SoundFile(this, "sounds/fail_2.mp3"));
-  failSounds.add(new SoundFile(this, "sounds/fail_3.mp3"));
-  failSounds.add(new SoundFile(this, "sounds/fail_4.mp3"));
-  failSounds.add(new SoundFile(this, "sounds/fail_5.mp3"));
-  failSounds.add(new SoundFile(this, "sounds/fail_6.mp3"));
+  addResources("sounds", "fail_", failSounds);
   
   rageSounds = new ArrayList<SoundFile>();
-  rageSounds.add(new SoundFile(this, "sounds/rage_1.mp3"));
+  addResources("sounds", "rage_", rageSounds);
   
   init();
 }
@@ -62,6 +60,7 @@ void init()
   
   lastPipeX = 0;
   pipesAfter = 0;
+  pipesAfterCache = 0;
   pipeDist = 200;
   pipeHoleSizeMin = 150;
   pipeHoleSizeMax = 200;
@@ -71,11 +70,26 @@ void init()
   bg       = new BackGround();
   columns  = new ArrayList<Column>();
   bird     = new Bird(200, height / 2 - 50, 75, 80);
-  rageCoin = new RageCoin(400, 200);
+  rageCoin = new RageCoin(0, 0);
+}
+
+void addResources(String folderName, String prefix, ArrayList<SoundFile> arr)
+{
+  File folder = new File(sketchPath(folderName));
+   
+  String[] filenames = folder.list();
+     
+  for (int i = 0; i < filenames.length; i++)
+  {
+    if (filenames[i].startsWith(prefix))
+    {
+        arr.add(new SoundFile(this, folderName + "/" + filenames[i]));
+    }
+  }
 }
 
 void gameOver()
-{ 
+{
   scrollSpeed = 0;
 }
 
@@ -124,7 +138,7 @@ void draw()
     noTint();
   }
   
-  xScroll = int(xScroll - scrollSpeed <= -width + shakeAmp ? 0 : xScroll - scrollSpeed);
+  xScroll = int(xScroll - scrollSpeed <= -width ? ((xScroll - scrollSpeed) - -width) : xScroll - scrollSpeed);
   
   if (startDelay == -1)
   {
@@ -170,6 +184,13 @@ void draw()
       startDelay--;
     }
   }
+   
+  rageCoin.show();
+  
+  if (scrollSpeed != 0)
+  {
+    rageCoin.move();
+  }
   
   ArrayList<Column> toRemove = new ArrayList<Column>();
       
@@ -189,10 +210,15 @@ void draw()
     columns.remove(columnToRemove);
   }
   
-  rageCoin.show();
-  
   bird.show();
   bird.update();
+  
+  if (pipesAfterCache % (5 * scrollSpeed) == 0 && pipesAfterCache > 0)
+  {
+    pipesAfterCache = 0;
+    scrollSpeed++;
+    println(scrollSpeed);
+  }
   
   if (scrollSpeed == 0)
   {

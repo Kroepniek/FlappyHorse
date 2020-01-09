@@ -24,7 +24,25 @@ class Bird
     w = _w;
     h = _h;
     
-    bird = loadImage("pictures/bird.png");
+    getRandomBirdFace();
+    //setBirdFace("Daniel");
+  }
+  
+  void getRandomBirdFace()
+  {
+    File folder = new File(sketchPath("pictures/birds/"));
+     
+    String[] filenames = folder.list();
+    
+    String randomName = filenames[int(random(filenames.length))];
+    randomName = randomName.substring(0, randomName.lastIndexOf("."));
+    
+    setBirdFace(randomName);
+  }
+  
+  void setBirdFace(String name)
+  {
+    bird = loadImage("pictures/birds/" + name + ".png");
     bird.resize(w, h);
   }
   
@@ -99,6 +117,9 @@ class Bird
       {
         started = false;
         gameOver();
+        
+        rage = false;
+        rageDelay = 0;
       }
 
       if (rage)
@@ -119,7 +140,7 @@ class Bird
       {
         if (scrollSpeed != 0)
         {
-          if (column.checkCollision(location, w, h) && false)
+          if (column.checkCollision(location, w, h))
           {
             print("Game Over \n");
             gameOver();
@@ -146,7 +167,15 @@ class Bird
             }
   
             failSounds.get(r).play();
-          }  
+          }
+        }
+      }
+      
+      if (rageCoin.checkCollision(location, w, h))
+      {
+        if (!rage)
+        {
+          rage();
         }
       }
     }
